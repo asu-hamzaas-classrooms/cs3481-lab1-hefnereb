@@ -102,15 +102,20 @@ uint64_t Tools::getByte(uint64_t source, int32_t byteNum)
  * 1) you can use an if to handle error checking on input
  * 2) no loops or conditionals (other than for 1) or switch
  */
-uint64_t Tools::getBits(uint64_t source, int32_t low, int32_t high)
-{
-  if (low < 0 || high > 63) {
-        return 0; 
-  }
-  return (source ) >> low;
+uint64_t Tools::getBits(uint64_t source, int32_t low, int32_t high) {
+    if (low > high || low < 0 || low > 63 || high < 0 || high > 63) {
+      return 0;
+    }
+        
+    uint64_t shifted = source >> low;
+
+    if (high - low + 1 == 64) {
+        return shifted;
+    }
+
+    return shifted & ((1ULL << (high - low + 1)) - 1);
 }
-
-
+       
 /**
  * sets the bits of source in the range specified by the low and high
  * parameters to 1 and returns that value. returns source if the low or high
@@ -135,7 +140,19 @@ uint64_t Tools::getBits(uint64_t source, int32_t low, int32_t high)
  */
 uint64_t Tools::setBits(uint64_t source, int32_t low, int32_t high)
 {
-  return 0;
+    // Single if for error checking
+    if (low > high || low < 0 || low > 63 || high < 0 || high > 63) {
+        return source;
+    }
+
+    // gets the number of bits to set
+    int32_t numBits = high - low + 1;
+
+    // creates mask of 1s 
+    uint64_t mask = (~0ULL >> (64 - numBits)) << low;
+
+    // uses or to set the bits to the original 64 bits
+    return source | mask;
 }
 
 /**
@@ -158,11 +175,24 @@ uint64_t Tools::setBits(uint64_t source, int32_t low, int32_t high)
  * 2) no loops or conditionals (other than for 1) or switch
  * 3) you can use other functions you have written, for example, getBits
  */
-uint64_t Tools::clearBits(uint64_t source, int32_t low, int32_t high)
-{
-  return 0;
-}
+uint64_t Tools::clearBits(uint64_t source, int32_t low, int32_t high) {
+    // Single if for error checking
+    if (low > high || low < 0 || low > 63 || high < 0 || high > 63) {
+        return source;
+    }
 
+    // Calculate the number of bits to clear
+    int32_t numBits = high - low + 1;
+
+    // Generate the range of 1's directly
+    uint64_t mask = (~0ULL >> (64 - numBits)) << low;
+
+    // Invert the range to create a mask with 0's in the range [low, high]
+    uint64_t invertedMask = ~mask;
+
+    // Clear the bits in the source using bitwise AND
+    return source & invertedMask;
+}
 
 /**
  * copies length bits from the source to a destination and returns the
